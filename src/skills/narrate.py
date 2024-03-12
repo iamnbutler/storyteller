@@ -7,14 +7,19 @@ load_dotenv()
 
 ASSISTANT_INSTRUCTION = "You are a narrator hired to give life and voice to rpg worlds and stories. Narrate the given scenarios and make the story come alive. Take small pauses before clearly narrating each decision after."
 
-PROMPT_DIR = "../prompts"
+PROMPT_DIR = "src/prompts"
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
 try:
-    user_query = input("Please enter your query: ")
+    prompt_name = input("Please enter the name of the prompt: ")
+    if not prompt_name.endswith(".md"):
+        prompt_name += ".md"
+    prompt_path = os.path.join(PROMPT_DIR, prompt_name)
+    with open(prompt_path, 'r') as file:
+        user_query = file.read()
 
     response = client.chat.completions.create(
         model="gpt-4",

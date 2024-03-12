@@ -27,3 +27,16 @@ Character Alignment with Quest:
 - When a character mentions a rumor or knowledge they hold, they should clarify its origins contextually.
 
 Remember, the realm where these stories unfold is unforgiving. Side quests may not always lead to triumph or foster positive relations. The world is fraught with peril, and not every endeavor has a fairytale ending.
+
+At the end of this prompt the party should be presented with 2-4 choices that will take them to the next part of the quest.
+
+Present the options like this:
+
+1. "You can choose to do this."
+2. "You can choose to do that."
+3. "You can choose to do this other thing."
+
+NEVER:
+
+- Make statements about the future, how the characters actions will impact the future, try to summarize the story and it's impact on the world or future.
+- Don't write long choices. They should be a scentence at most.
