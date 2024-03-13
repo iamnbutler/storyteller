@@ -1,6 +1,6 @@
 Prompt Type: Side Quest Creation
 
-Objectives: Engage the Adventurers, Explore the D&D World, Interact with NPCs
+Objectives: Create an engaging side quest that will challenge the party and provide them with a meaningful choice.
 
 Focus Areas:
 
@@ -35,6 +35,8 @@ Present the options like this:
 1. "You can choose to do this."
 2. "You can choose to do that."
 3. "You can choose to do this other thing."
+
+All side quests should include character dialogue.
 
 NEVER:
 

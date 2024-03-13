@@ -31,15 +31,10 @@ try:
 
     assistant_reply = response.choices[0].message.content
 
-    voice_response = client.audio.speech.create(
-        model="tts-1",
-        voice="shimmer",
-        input=assistant_reply,
-    )
+    with open("output.md", "w") as md_file:
+        md_file.write(assistant_reply)
 
-    voice_response.stream_to_file("output.mp3")
-
-    print("Successfully got response from OpenAI and saved to output.mp3")
+    print("Successfully got response from OpenAI and saved to output.md")
 
 except Exception as e:
     print("Couldn't create output. There was an error:")
