@@ -25,24 +25,40 @@ A robust party includes:
 
 Utilize the template below to form the foundation of each party member:
 
-- **Character Name:**
-- **Race:**
-- **Class:**
-- **Background:**
-- **Personality Traits:**
-- **Ideals:**
-- **Bonds:**
-- **Flaws:**
-- **Primary Role:**
-- **Secondary Role:**
-- **Attribute Scores (STR, DEX, etc.):**
-- **Armor Class (AC):**
-- **Hit Points (HP):**
-- **Speed:**
-- **Proficiencies (Skills, Weapons, Armor):**
-- **Languages:**
-- **Equipment:**
-- **Special Abilities/Spells (if applicable):**
+Name
+
+- Level
+- Race
+- Class
+- Background
+- Personality Traits
+- Ideals
+- Bonds
+- Flaws
+- Primary Role
+- Secondary Role
+- Attribute Scores (STR, DEX, etc.)
+- Armor Class (AC)
+- Hit Points (HP)
+- Speed
+- Proficiencies (Skills, Weapons, Armor)
+- Languages
+- Equipment
+- Special Abilities/Spells (if applicable)
+
+### D. Choosing Character Names
+
+Names breathe life into your characters, giving them identity and depth. Consider the following for inspiration:
+
+- **Cultural Significance:** Names that reflect a character's heritage or birthplace.
+- **Meaningful Selection:** Choose names with meanings that resonate with the character's personality or destiny.
+- **Ease of Use:** Opt for names that are easy to remember and pronounce for smoother gameplay.
+
+  Naming should respect the tone of the campaign, keeping in sync with its world while adding to the immersion of your epic tale.
+
+**Key Dos and Don'ts:**
+
+- **DON'T** use terrible class-related names like "Sylvin Woodstride, the Elven Ranger", "Tiberius Quickfingers, the Halfling Bard", "Gwendolyn Shadowspeak, the Tiefling Warlock", etc.
 
 ### C. Natural Party Formation
 
@@ -52,51 +68,7 @@ When assembling your party, consider the natural social dynamics of your game's 
 - **Diverse Settings:** Conversely, a party from a cosmopolitan city could feature a true mix of races and backgrounds.
 - **Social Tensions:** Factor in racial tensions or biases. If there is widespread distrust of a certain race within the world, it is less likely for that race to be represented in your party unless there is a compelling narrative reason.
 
-## III. Sample Party Characters
-
-### A. Jorin Highhill, the Halfling Rogue (Scout/Strategist)
-
-- **Race:** Halfling
-- **Class:** Rogue
-- **Background:** Charlatan
-- **Personality Traits:** Resourceful and charismatic, with a talent for getting out of tight spots.
-- **Ideals:** Independence and fortune drive him, but he's loyal to those who earn his trust.
-- **Bonds:** He owes a debt to the party's spellcaster, who once saved him from the law.
-- **Flaws:** A tendency to pocket things that don't belong to him.
-
-**Primary Role:** Scout
-**Secondary Role:** Damage Dealer
-**Attribute Scores:** STR 8, DEX 16, CON 14, INT 12, WIS 10, CHA 14
-**AC:** 15
-**HP:** 8
-**Speed:** 25 ft.
-**Proficiencies:** Stealth, Sleight of Hand, Thieves' Tools, Light Armor, Simple Weapons
-**Languages:** Common, Halfling
-**Equipment:** Dagger, thieves' tools, leather armor, a set of loaded dice
-**Special Abilities:** Sneak Attack, Evasion
-
-### B. Mara Lightbringer, the Human Cleric (Healer/Support)
-
-- **Race:** Human
-- **Class:** Cleric (Life Domain)
-- **Background:** Folk Hero
-- **Personality Traits:** Kind-hearted and unyielding, her resolve is as strong as her faith.
-- **Ideals:** She believes in the inherent goodness of people and strives to bring out the best in them.
-- **Bonds:** Mara is driven to protect her companions, who have become her new family.
-- **Flaws:** Can be too trusting, which sometimes puts her at odds with more cautious allies.
-
-**Primary Role:** Healer
-**Secondary Role:** Support/Buffer
-**Attribute Scores:** STR 10, DEX 12, CON 13, INT 12, WIS 16, CHA 14
-**AC:** 18 (Chain mail + shield)
-**HP:** 10
-**Speed:** 30 ft.
-**Proficiencies:** Insight, Religion, Medium Armor, Shields, Simple Weapons
-**Languages:** Common, Celestial
-**Equipment:** Mace, chain mail, shield, holy symbol, healer's kit
-**Special Abilities:** Divine Healing, Turn Undead
-
-## IV. Party Synergy and Backstories
+## III. Party Synergy and Backstories
 
 ### A. Balancing Backstories
 
