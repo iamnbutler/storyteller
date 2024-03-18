@@ -1,23 +1,31 @@
-import { OpenAI } from "openai";
-import { readFile, saveFile } from "./fileService.js";
+import { saveMarkdown, readMarkdown } from "./fileService";
 
-const client = new OpenAI(process.env.OPENAI_API_KEY);
+import dotenv from "dotenv";
+dotenv.config({ path: "../../.env" });
 
-export async function generateParty() {
-  // Read the party handbook and combine with the instruction
-  // Call the OpenAI API to generate the party
-  // You'll need to adjust your setup for configuration and routing
-  // return generatedPartyText;
+const openai_key = process.env.OPENAI_API_KEY;
+
+if (!openai_key) {
+  throw new Error("OpenAI API key not found");
 }
 
-export async function extendBackground() {
-  // Read the existing background
-  // Call the OpenAI API to extend the background
-  // return extendedBackgroundText;
-}
+import OpenAI from "openai";
 
-export async function narratePrompt(promptName) {
-  // Read the prompt
-  // Call the OpenAI API to get the narration
-  // return narratedPromptText;
+const openai = new OpenAI({ apiKey: openai_key });
+
+const MODEL = "gpt-4-0125-preview";
+
+export async function completion(): Promise<string> {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      { role: "system", content: "You are a helpful assistant designed to output JSON." },
+      { role: "user", content: "Who won the world series in 2020?" },
+      { role: "assistant", content: "The Los Angeles Dodgers won the World Series in 2020." },
+      { role: "user", content: "Where was it played?" },
+    ],
+    model: MODEL,
+    response_format: { type: "json_object" },
+  });
+
+  return completion.choices[0].message.content || "No response";
 }
