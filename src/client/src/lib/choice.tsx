@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Choice } from "./store";
 import { theme } from "./theme";
+import clsx from "clsx";
 
 export const ChoiceView = ({
   choice,
@@ -13,30 +14,26 @@ export const ChoiceView = ({
 }) => {
   const disabled = !selected && choice.chosen;
 
-  const inactive_chosen = theme.text.primary;
-  const inactive_not_chosen = theme.text.muted;
-  const active_selected = theme.accent;
-  const active_not_selected = theme.text.secondary;
+  let text_color = "text-zinc-400";
+
+  if (choice.chosen || selected) {
+    text_color = "text-zinc-50";
+  }
 
   return (
-    <button
-      style={{
-        background: selected ? theme.accent : "transparent",
-        color: current
-          ? choice.chosen
-            ? active_selected
-            : active_not_selected
-          : choice.chosen
-            ? inactive_chosen
-            : inactive_not_chosen,
-        opacity: disabled ? 0.5 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-      disabled={disabled}
-      className="text-left"
-    >
-      {choice.label}
-    </button>
+    <div className="group flex gap-1">
+      <div className="-mr-2 h-4 w-4 flex-none text-orange-500">{current && selected && ">"}</div>
+      <button
+        className={clsx(text_color)}
+        style={{
+          opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+        disabled={disabled}
+      >
+        {choice.label}
+      </button>
+    </div>
   );
 };
 
@@ -50,7 +47,7 @@ export const ChoicesView = ({
   const [selected, setSelected] = useState<number>(0);
 
   const debounceTimeout = 50; // Debouncing period in milliseconds
-  let debounceTimer: any = null;
+  let debounceTimer: number | undefined;
 
   const debounceSetSelected = (value: (prev: number) => number) => {
     clearTimeout(debounceTimer);

@@ -8,7 +8,7 @@ const STORY_CONTEXT = `Baldur's Gate, a city of opportunity and danger, stands a
 function App() {
   const {
     story,
-    choices,
+    // choices,
     currentChoices,
     setStory,
     setChoices,
