@@ -1,59 +1,87 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Choice } from "./store";
+import { theme } from "./theme";
 
 export const ChoiceView = ({
   choice,
-  active,
+  current,
   selected,
 }: {
   choice: Choice;
-  active: boolean;
+  current: boolean;
   selected: boolean;
 }) => {
   const disabled = !selected && choice.chosen;
 
+  const inactive_chosen = theme.text.primary;
+  const inactive_not_chosen = theme.text.muted;
+  const active_selected = theme.accent;
+  const active_not_selected = theme.text.secondary;
+
   return (
     <button
       style={{
-        backgroundColor: active
+        background: selected ? theme.accent : "transparent",
+        color: current
           ? choice.chosen
-            ? "#4CAF50"
-            : "#8BC34A"
+            ? active_selected
+            : active_not_selected
           : choice.chosen
-            ? "#F44336"
-            : "#E57373",
-        color: "white",
+            ? inactive_chosen
+            : inactive_not_chosen,
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
       }}
       disabled={disabled}
+      className="text-left"
     >
       {choice.label}
     </button>
   );
 };
 
-export const ChoicesView = ({ choices, active }: { choices: Choice[]; active: boolean }) => {
+export const ChoicesView = ({
+  choices,
+  current: active,
+}: {
+  choices: Choice[];
+  current: boolean;
+}) => {
   const [selected, setSelected] = useState<number>(0);
 
+  const debounceTimeout = 50; // Debouncing period in milliseconds
+  let debounceTimer: any = null;
+
+  const debounceSetSelected = (value: (prev: number) => number) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => setSelected(value), debounceTimeout);
+  };
+
+  // The event handler now calls the debounced version of "setSelected"
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowUp") {
-      setSelected((prev) => (prev - 1 + choices.length) % choices.length);
+      debounceSetSelected((prev) => (prev - 1 + choices.length) % choices.length);
     } else if (e.key === "ArrowDown") {
-      setSelected((prev) => (prev + 1) % choices.length);
+      debounceSetSelected((prev) => (prev + 1) % choices.length);
     }
   };
 
-  if (active) {
-    window.addEventListener("keydown", handleKeyDown);
-  } else {
-    window.removeEventListener("keydown", handleKeyDown);
-  }
+  // Use "useEffect" to manage adding and removing the event listener
+  useEffect(() => {
+    if (active) {
+      window.addEventListener("keydown", handleKeyDown);
+      // Clear the debouncing timer on unmount
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        clearTimeout(debounceTimer);
+      };
+    }
+  }, [active, handleKeyDown]);
 
   return (
-    <div>
+    <div className="flex flex-col justify-start gap-1 py-4 text-left">
       {choices.map((choice, ix) => (
-        <ChoiceView key={choice.id} choice={choice} active={active} selected={selected === ix} />
+        <ChoiceView key={choice.id} choice={choice} current={active} selected={selected === ix} />
       ))}
     </div>
   );
