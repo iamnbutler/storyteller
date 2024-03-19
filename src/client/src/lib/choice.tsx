@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { Choice, useGameState } from "./store";
+import { useState, useCallback, useEffect } from "react";
+import { Choice, StorySegment, useGameState } from "./store";
 import clsx from "clsx";
 
 export const ChoiceView = ({
@@ -31,26 +31,21 @@ export const ChoiceView = ({
   );
 };
 
-export const ChoicesView = ({ choices }: { choices: Choice[] }) => {
+export const ChoicesView = ({ segment, current }: { segment: StorySegment; current: boolean }) => {
   const [selected, setSelected] = useState(0);
-  const { setChosenChoice, setCurrentChoices, currentChoices } = useGameState();
-
-  const current = currentChoices[0].group_id === choices[0].group_id;
+  const { setChosenChoice } = useGameState();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      console.log("fired handleKeyDown");
-
       if (e.key === "ArrowUp") {
-        setSelected((prev) => (prev - 1 + choices.length) % choices.length);
+        setSelected((prev) => (prev - 1 + segment.choices.length) % segment.choices.length);
       } else if (e.key === "ArrowDown") {
-        setSelected((prev) => (prev + 1) % choices.length);
-      } else if (e.key === "Enter") {
-        setChosenChoice(choices[selected]?.id);
-        setCurrentChoices("");
+        setSelected((prev) => (prev + 1) % segment.choices.length);
+      } else if (e.key === "Enter" && current) {
+        setChosenChoice(segment.id, segment.choices[selected]?.id);
       }
     },
-    [choices, selected, setChosenChoice],
+    [segment, selected, setChosenChoice],
   );
 
   useEffect(() => {
@@ -62,7 +57,7 @@ export const ChoicesView = ({ choices }: { choices: Choice[] }) => {
 
   return (
     <div className="flex flex-col justify-start gap-1 py-4 text-left">
-      {choices.map((choice, ix) => (
+      {segment.choices.map((choice, ix) => (
         <ChoiceView key={choice.id} choice={choice} current={current} selected={selected === ix} />
       ))}
     </div>
