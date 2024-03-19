@@ -36,12 +36,11 @@ function App() {
             fontSize: "12px",
             lineHeight: "16px",
           }}
-          className="mx-auto mt-64 h-[248px] w-[440px]"
+          className="mx-auto mt-64 h-[248px] w-[440px] pt-4"
         >
           {currentSegment ? (
             <div key={currentSegment.id}>
-              <p>{currentSegment.story}</p>
-              <hr className="border-white/10" />
+              <p className="px-4">{currentSegment.story}</p>
               {currentSegment.choices.length > 0 && (
                 <ol>
                   <ChoicesView segment={currentSegment} current={true} />
@@ -53,7 +52,7 @@ function App() {
           )}
         </div>
       </div>
-      <div className="absolute right-0 top-0 flex w-64 flex-col gap-4 overflow-hidden text-xs">
+      <div className="absolute right-0 top-0 flex w-64 flex-col gap-4 overflow-hidden text-xs opacity-10 hover:opacity-100">
         <pre>{JSON.stringify(story, null, 2)}</pre>
       </div>
     </>
