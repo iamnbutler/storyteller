@@ -1,12 +1,14 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import * as openaiService from "./services/openaiService";
+import cors from 'cors';
 
 dotenv.config();
 
 const app = express();
 const port: number = parseInt(process.env.PORT || "3000");
 
+app.use(cors());
 app.use(express.json());
 
 app.post("/openai/completion", async (req: Request, res: Response) => {

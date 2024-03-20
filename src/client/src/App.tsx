@@ -1,28 +1,52 @@
 import { useEffect } from "react";
 import { useGameState } from "./lib/store";
-import { ChoicesView } from "./lib/choice";
 import { theme } from "./lib/theme";
+import { ChoicesView } from "./ui/choices";
+import { fetchChoices } from "./lib/choice";
 
 const STORY_CONTEXT = `Baldur's Gate, a city of opportunity and danger, stands as a bustling metropolis on the Sword Coast—a place where ambition and intrigue mingle with commerce and trade. It's a city of stark contrasts, where the wealthy patriarchy resides within the Upper City while the Lower City teems with working folk, gangs, and the destitute. The recent events of the "Iron Crisis," with its turmoil and strife, have passed—but not without leaving scars and tales that still echo through the cobbled streets and tavern whispers.`;
 
 function App() {
-  const { story, setStory, createStorySegment, addChoicesToStorySegment, createChoice } =
+  const { story, setStory, createStorySegment, addChoicesToStorySegment, setCurrentChoicesLoaded, currentChoicesLoaded } =
     useGameState();
 
   useEffect(() => {
+    let canceled = false;
     const newStorySegment = createStorySegment(STORY_CONTEXT);
     setStory([newStorySegment]);
 
-    addChoicesToStorySegment(
-      [
-        createChoice("Report the information to the city guard."),
-        createChoice("Investigate the warehouse yourself."),
-        createChoice("Hint that you want to join the next heist."),
-        createChoice("Ignore the conversation."),
-      ],
-      newStorySegment.id,
-    );
-  }, [createChoice, createStorySegment, setStory, addChoicesToStorySegment]);
+    async function fetch() {
+      const choices = await fetchChoices(STORY_CONTEXT);
+
+      if (!canceled && choices && choices.length > 0) {
+        addChoicesToStorySegment(choices, newStorySegment.id);
+        setCurrentChoicesLoaded(true);
+      } else if(!canceled) {
+        throw new Error("No choices received");
+      }
+    }
+
+    fetch();
+
+    return () => {
+      canceled = true;
+    };
+  }, [createStorySegment, setStory, addChoicesToStorySegment, setCurrentChoicesLoaded]);
+
+  useEffect(() => {
+      async function fetch() {
+        const choices = await fetchChoices(STORY_CONTEXT);
+
+        if (choices && choices.length > 0) {
+        addChoicesToStorySegment(choices, story[0].id);
+        setCurrentChoicesLoaded(true);
+        } else {
+          throw new Error("No choices recieved")
+        }
+      }
+
+      fetch();
+    }, []);
 
   const currentSegment = story[0];
 
@@ -41,7 +65,7 @@ function App() {
           {currentSegment ? (
             <div key={currentSegment.id}>
               <p className="px-4">{currentSegment.story}</p>
-              {currentSegment.choices.length > 0 && (
+              {currentChoicesLoaded && currentSegment.choices.length > 0 && (
                 <ol>
                   <ChoicesView segment={currentSegment} current={true} />
                 </ol>

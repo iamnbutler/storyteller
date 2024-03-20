@@ -5,6 +5,7 @@ export type Choice = {
   id: string;
   label: string;
   chosen: boolean;
+  consequence?: string;
 };
 
 export type StorySegment = {
@@ -18,8 +19,10 @@ type GameState = {
   setStory: (story: StorySegment[]) => void;
   createStorySegment: (text: string) => StorySegment;
   addChoicesToStorySegment: (choices: Choice[], segment_id: string) => void;
-  createChoice: (label: string) => Choice;
+  createChoice: (label: string, consequence?: string) => Choice;
   setChosenChoice: (segmentId: string, choiceId: string) => void;
+  currentChoicesLoaded: boolean;
+  setCurrentChoicesLoaded: (loaded: boolean) => void;
 };
 
 export const useGameState = create<GameState>()((set) => ({
@@ -46,10 +49,11 @@ export const useGameState = create<GameState>()((set) => ({
       }),
     }));
   },
-  createChoice: (label: string): Choice => ({
+  createChoice: (label: string, consequence?: string): Choice => ({
     id: nanoid(),
     label,
     chosen: false,
+    consequence,
   }),
   setChosenChoice: (segmentId: string, choiceId: string) => {
     set((state) => ({
@@ -65,4 +69,6 @@ export const useGameState = create<GameState>()((set) => ({
       }),
     }));
   },
+  currentChoicesLoaded: false,
+  setCurrentChoicesLoaded: (loaded: boolean) => set({ currentChoicesLoaded: loaded }),
 }));

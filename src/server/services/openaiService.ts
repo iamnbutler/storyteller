@@ -1,5 +1,3 @@
-import { saveMarkdown, readMarkdown } from "./fileService";
-
 import dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
@@ -13,17 +11,16 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: openai_key });
 
-const MODEL = "gpt-4-0125-preview";
+const MODEL = "gpt-4-turbo";
 
 export async function completion(content: string): Promise<string> {
   try {
     const completionResult = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a helpful assistant designed to output JSON." },
+        { role: "system", content: "You are a helpful assistant designed to help write stories." },
         { role: "user", content },
       ],
       model: MODEL,
-      response_format: { type: "json_object" },
     });
 
     const messageContent = completionResult.choices[0].message.content;
