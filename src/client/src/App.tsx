@@ -7,8 +7,14 @@ import { fetchChoices } from "./lib/choice";
 const STORY_CONTEXT = `Baldur's Gate, a city of opportunity and danger, stands as a bustling metropolis on the Sword Coast—a place where ambition and intrigue mingle with commerce and trade. It's a city of stark contrasts, where the wealthy patriarchy resides within the Upper City while the Lower City teems with working folk, gangs, and the destitute. The recent events of the "Iron Crisis," with its turmoil and strife, have passed—but not without leaving scars and tales that still echo through the cobbled streets and tavern whispers.`;
 
 function App() {
-  const { story, setStory, createStorySegment, addChoicesToStorySegment, setCurrentChoicesLoaded, currentChoicesLoaded } =
-    useGameState();
+  const {
+    story,
+    setStory,
+    createStorySegment,
+    addChoicesToStorySegment,
+    setCurrentChoicesLoaded,
+    currentChoicesLoaded,
+  } = useGameState();
 
   useEffect(() => {
     let canceled = false;
@@ -21,7 +27,7 @@ function App() {
       if (!canceled && choices && choices.length > 0) {
         addChoicesToStorySegment(choices, newStorySegment.id);
         setCurrentChoicesLoaded(true);
-      } else if(!canceled) {
+      } else if (!canceled) {
         throw new Error("No choices received");
       }
     }
@@ -34,19 +40,19 @@ function App() {
   }, [createStorySegment, setStory, addChoicesToStorySegment, setCurrentChoicesLoaded]);
 
   useEffect(() => {
-      async function fetch() {
-        const choices = await fetchChoices(STORY_CONTEXT);
+    async function fetch() {
+      const choices = await fetchChoices(STORY_CONTEXT);
 
-        if (choices && choices.length > 0) {
+      if (choices && choices.length > 0) {
         addChoicesToStorySegment(choices, story[0].id);
         setCurrentChoicesLoaded(true);
-        } else {
-          throw new Error("No choices recieved")
-        }
+      } else {
+        throw new Error("No choices recieved");
       }
+    }
 
-      fetch();
-    }, []);
+    fetch();
+  }, []);
 
   const currentSegment = story[0];
 

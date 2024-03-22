@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import * as db from "./db.js";
+import * as db from "../db.js";
 
 export type StoryChoice = {
   id: string;
@@ -52,6 +52,10 @@ const getChoiceById = (segment: StorySegment, choice_id: string): StoryChoice =>
   return choice;
 };
 
+const getChoicesBySegmentId = (segmentId: string): StoryChoice[] => {
+  return db.getChoicesBySegmentId(segmentId);
+};
+
 /** Selects a choice for the given segment */
 const selectChoice = (segment: StorySegment, choice_id: string): StorySegment => {
   return {
@@ -81,4 +85,5 @@ export {
   selectChoice,
   nextSegment,
   createOptimisticTextFromChoice,
+  getChoicesBySegmentId,
 };
