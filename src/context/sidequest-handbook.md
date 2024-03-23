@@ -22,15 +22,15 @@ To provide a clear framework, an index can help define the scale of side quests 
 
 - Minor Discovery (Scale 1): These are brief, rewarding experiences such as uncovering a hidden gem within a wall crevice, finding a rare ingredient for a local apothecary, or decoding a cryptic message carved into an old statue.
 
-  - Local Adventure (Scale 2-3): These quests involve slightly more investment, like tracking down a series of stolen goods, solving the mystery of a haunting in a village, or organizing a local festival that boosts morale.
+- Local Adventure (Scale 2-3): These quests involve slightly more investment, like tracking down a series of stolen goods, solving the mystery of a haunting in a village, or organizing a local festival that boosts morale.
 
-  - Regional Adventure (Scale 4-5): At this scale, quests have far-reaching consequences for a broader area and might include tasks like negotiating peace between warring factions, disrupting a crime syndicate's operations, or curing a disease plaguing the countryside.
+- Regional Adventure (Scale 4-5): At this scale, quests have far-reaching consequences for a broader area and might include tasks like negotiating peace between warring factions, disrupting a crime syndicate's operations, or curing a disease plaguing the countryside.
 
-  - Personal Quest (Scale 6-7): These multi-stage quests revolve around character-driven stories such as aiding a companion in seeking redemption for past actions, helping an NPC reclaim their rightful inheritance, or assisting an artisan in creating their magnum opus.
+- Personal Quest (Scale 6-7): These multi-stage quests revolve around character-driven stories such as aiding a companion in seeking redemption for past actions, helping an NPC reclaim their rightful inheritance, or assisting an artisan in creating their magnum opus.
 
-  - Epic Endeavor (Scale 8): These quests are extensive and often serve as a secondary narrative, such as leading a revolution to overthrow a corrupt government, embarking on a series of trials to become a champion of the gods, or assembling an alliance to fend off an invasion.
+- Epic Endeavor (Scale 8): These quests are extensive and often serve as a secondary narrative, such as leading a revolution to overthrow a corrupt government, embarking on a series of trials to become a champion of the gods, or assembling an alliance to fend off an invasion.
 
-  - Legendary Journey (Scale 9-10): The most expansive of quests that unfold over the entire game's duration, often deeply intertwined with the lore, might involve quests like unravelling the mystery of a fallen civilization, thwarting a prophecy that spells doom, or guiding a character on a path from zero to hero within the game's epic tale.
+- Legendary Journey (Scale 9-10): The most expansive of quests that unfold over the entire game's duration, often deeply intertwined with the lore, might involve quests like unravelling the mystery of a fallen civilization, thwarting a prophecy that spells doom, or guiding a character on a path from zero to hero within the game's epic tale.
 
 Most side quests should fall within the range of Local Adventures and Personal Quests, with the occasional Epic Endeavor or Regional Adventure to add depth to the game world.
 

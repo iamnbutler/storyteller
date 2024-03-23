@@ -21,6 +21,20 @@ A robust party includes:
 - A **DPS (damage per second)** for offensive power.
 - A **support/utility** class for agility, problem-solving, and augmenting the party's abilities.
 
+However, these roles can be combined or adapted based on the party's preferences and playstyle. Some parties may not have all of these roles, or any at all, depending on the campaign's focus.
+
+#### Expanded Roles:
+
+- **Crowd Control:** Characters who can manipulate the battlefield by hindering enemies or controlling their movements.
+- **Skill Monkey:** Characters with a wide range of skills and proficiencies to handle various non-combat challenges.
+- **Face:** Characters who excel in social interactions, negotiations, and information gathering.
+- **Scout:** Characters who specialize in reconnaissance, stealth, and exploration.
+- **Hybrid:** Characters who blend multiple roles to create unique playstyles.
+
+#### Interesting Parties:
+
+A party with exactly a tank, healer, DPS, and support will seem overly contrived and vanilla. Consider mixing and matching roles to create a more dynamic and engaging party, or having two characters with the same role that creates tension until they learn to work together. There may also be campaigns where the party is not balanced, and the players must adapt to the challenges that arise.
+
 ### B. Character Creation Template
 
 Utilize the template below to form the foundation of each party member:
