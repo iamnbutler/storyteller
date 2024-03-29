@@ -131,3 +131,13 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Compiled Files
+*.com
+*.dll
+*.exe
+*.o
+*.so
+
+# Rust artifacts
+target/
