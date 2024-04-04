@@ -1,8 +1,24 @@
-use async_std::prelude::*;
+use async_recursion::async_recursion;
 use async_std::task;
 use dialoguer::Select;
-use std::pin::Pin;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 use uuid::Uuid;
+
+#[derive(Clone)]
+struct GameContext {
+    segments: HashMap<String, StorySegment>,
+    choices: HashMap<String, Choice>,
+}
+
+impl GameContext {
+    fn new() -> Self {
+        Self {
+            segments: HashMap::new(),
+            choices: HashMap::new(),
+        }
+    }
+}
 
 #[derive(Clone)]
 struct StorySegment {
@@ -49,6 +65,7 @@ async fn async_main() {
 }
 
 async fn start_game() {
+    let cx = Arc::new(RwLock::new(GameContext::new()));
     println!("Starting the game...");
 
     let intro_segment = StorySegment::new(
@@ -71,43 +88,45 @@ async fn start_game() {
         ],
     );
 
-    play_segment(intro_segment).await;
+    play_segment(cx, intro_segment).await;
 }
 
-fn play_segment(segment: StorySegment) -> Pin<Box<dyn Future<Output = ()> + Send>> {
-    Box::pin(async move {
-        println!("\n{}", segment.narrative);
-        if !segment.choices.is_empty() {
-            show_choices(segment.choices).await;
-        } else {
-            println!("This path has come to an end.");
-        }
-    })
+async fn play_segment(cx: Arc<RwLock<GameContext>>, segment: StorySegment) {
+    cx.write()
+        .unwrap()
+        .segments
+        .insert(segment.id.clone(), segment.clone());
+
+    println!("\n{}", segment.narrative);
+    if !segment.choices.is_empty() {
+        show_choices(cx, segment.choices).await;
+    } else {
+        println!("This path has come to an end.");
+    }
 }
 
-fn show_choices(choices: Vec<Choice>) -> Pin<Box<dyn Future<Output = ()> + Send>> {
-    Box::pin(async move {
-        let selections = choices
-            .iter()
-            .map(|choice| choice.text.as_str())
-            .collect::<Vec<_>>();
+#[async_recursion]
+async fn show_choices(cx: Arc<RwLock<GameContext>>, choices: Vec<Choice>) {
+    let selections = choices
+        .iter()
+        .map(|choice| choice.text.as_str())
+        .collect::<Vec<_>>();
 
-        let selection = Select::new()
-            .with_prompt("What do you do?")
-            .default(0)
-            .items(&selections)
-            .interact()
-            .unwrap();
+    let selection = Select::new()
+        .with_prompt("What do you do?")
+        .default(0)
+        .items(&selections)
+        .interact()
+        .unwrap();
 
-        println!("\n{}", choices[selection].consequence);
+    cx.write()
+        .unwrap()
+        .choices
+        .insert(choices[selection].id.clone(), choices[selection].clone());
 
-        if let Some(next_segment) = choices[selection].next_segment.as_ref() {
-            play_segment((**next_segment).clone()).await;
-        }
-    })
-}
+    println!("\n{}", choices[selection].consequence);
 
-async fn simulate_async_operation() -> String {
-    task::sleep(std::time::Duration::from_secs(2)).await;
-    "Operation completed!".to_string()
+    if let Some(next_segment) = choices[selection].next_segment.as_ref() {
+        play_segment(cx, (**next_segment).clone()).await;
+    }
 }
