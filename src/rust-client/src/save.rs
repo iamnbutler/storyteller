@@ -14,7 +14,6 @@ pub fn get_save_path() -> Result<PathBuf, io::Error> {
     Ok(save_path)
 }
 
-// construct the save path fron thr save dir abd a file name
 pub fn build_save_path(file_name: &str) -> Result<PathBuf, io::Error> {
     let save_path = get_save_path()?;
     Ok(save_path.join(file_name))

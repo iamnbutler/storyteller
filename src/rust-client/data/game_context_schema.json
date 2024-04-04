@@ -61,7 +61,7 @@
         "choices": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Choice"
+            "type": "string"
           }
         },
         "id": {

@@ -1,4 +1,5 @@
 use async_recursion::async_recursion;
+use async_std::sync::RwLock;
 use async_std::task;
 use dialoguer::Select;
 use save::{build_save_path, get_save_path};
@@ -9,7 +10,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use uuid::Uuid;
 use valico::json_schema;
 mod save;
@@ -26,6 +27,30 @@ impl GameContext {
             segments: HashMap::new(),
             choices: HashMap::new(),
         }
+    }
+
+    pub async fn add_segment_async(cx: Arc<RwLock<GameContext>>, new_segment: StorySegment) {
+        let mut game_ctx = cx.write().await;
+        game_ctx
+            .segments
+            .insert(new_segment.id.clone(), new_segment);
+    }
+
+    pub fn get_segment(&self, id: &str) -> Option<StorySegment> {
+        self.segments.get(id).cloned()
+    }
+
+    pub fn get_segments(&self) -> Vec<StorySegment> {
+        self.segments.values().cloned().collect()
+    }
+
+    pub async fn add_choice_async(cx: Arc<RwLock<GameContext>>, new_choice: Choice) {
+        let mut game_ctx = cx.write().await;
+        game_ctx.choices.insert(new_choice.id.clone(), new_choice);
+    }
+
+    pub fn get_choice(&self, id: &str) -> Option<Choice> {
+        self.choices.get(id).cloned()
     }
 
     pub fn build_json_schema() -> std::io::Result<()> {
@@ -45,35 +70,31 @@ impl GameContext {
     }
 }
 
-fn load_and_validate_game_context() -> Result<(), Box<dyn std::error::Error>> {
-    // Load the schema and the JSON instance (same as your code)
+fn load_and_validate_game_context(
+    file_path: PathBuf,
+) -> Result<GameContext, Box<dyn std::error::Error>> {
     let schema_path = build_save_path("game_context_schema.json")?;
     let schema_json = load_json(schema_path)?;
-    let game_context_path = build_save_path("game_context.json")?;
-    let game_context_json = load_json(game_context_path)?;
 
-    // Create a new scope and compile the schema
+    // Instead of loading generic JSON, directly load GameContext
+    let mut file = File::open(file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    let game_context: GameContext = serde_json::from_str(&contents)?;
+
     let mut scope = json_schema::Scope::new();
     let schema = scope.compile_and_return(schema_json, false)?;
 
-    // Validate the instance against the compiled schema
+    // Validate GameContext as serde_json::Value for schema compliance
+    let game_context_json: Value = serde_json::from_str(&contents)?;
     let state = schema.validate(&game_context_json);
 
-    // Check if there were any errors
-    if state.is_valid() {
-        println!("The game context is valid according to the schema.");
-    } else {
-        println!("Validation failed:");
-        for error in &state.errors {
-            println!("- {}", error.get_title());
-        }
-        for suberror in &state.missing {
-            println!("- Missing: {}", suberror);
-        }
-        return Err("Validation failed".into());
+    if !state.is_valid() {
+        // Detailed error printing omitted for brevity
+        return Err("Validation failed with detailed errors".into());
     }
 
-    Ok(())
+    Ok(game_context)
 }
 
 fn load_json(file_path: PathBuf) -> Result<Value, Box<dyn std::error::Error>> {
@@ -88,15 +109,15 @@ fn load_json(file_path: PathBuf) -> Result<Value, Box<dyn std::error::Error>> {
 struct StorySegment {
     id: String,
     narrative: String,
-    choices: Vec<Choice>,
+    choices: Vec<String>,
 }
 
 impl StorySegment {
-    fn new(narrative: &str, choices: Vec<Choice>) -> Self {
+    fn new(narrative: &str, choice_ids: Vec<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             narrative: narrative.to_string(),
-            choices,
+            choices: choice_ids,
         }
     }
 }
@@ -125,50 +146,48 @@ fn main() {
 }
 
 async fn async_main() {
+    let context_path = if let Ok(path) = build_save_path("game_context.json") {
+        path
+    } else {
+        eprintln!("Error building save path for game context");
+        return;
+    };
     let game_context = GameContext::build_json_schema();
     if let Err(e) = game_context {
         eprintln!("Error generating JSON schema: {}", e);
     }
 
-    if let Err(e) = load_and_validate_game_context() {
-        eprintln!("Error: {}", e);
-    }
+    let game_context = match load_and_validate_game_context(context_path.clone()) {
+        Ok(gc) => gc,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
+    };
 
-    start_game().await;
+    start_game(game_context).await;
 }
 
-async fn start_game() {
-    let cx = Arc::new(RwLock::new(GameContext::new()));
+async fn start_game(game_context: GameContext) {
     println!("Starting the game...");
 
-    let intro_segment = StorySegment::new(
-        "You stand before the ancient ruins...",
-        vec![
-            Choice::new(
-                "Enter the ruins",
-                "The air is cool and damp...",
-                Some(
-                    StorySegment::new(
-                        "As you proceed, the corridor splits in two directions.",
-                        vec![
-                            Choice::new("Go left", "You find an ancient relic.", None),
-                            Choice::new("Go right", "A sudden drop awaits. It's a dead end, but you manage to climb out safely.", None),
-                        ]
-                    )
-                )
-            ),
-            Choice::new("Leave", "You decide to leave...", None),
-        ],
-    );
+    let cx = Arc::new(RwLock::new(game_context));
 
-    play_segment(cx, intro_segment).await;
+    let first_segment_id = {
+        let game_context = cx.read().await;
+        game_context.segments.values().next().unwrap().id.clone()
+    };
+
+    play_segment(cx.clone(), first_segment_id).await;
 }
 
-async fn play_segment(cx: Arc<RwLock<GameContext>>, segment: StorySegment) {
-    cx.write()
-        .unwrap()
-        .segments
-        .insert(segment.id.clone(), segment.clone());
+async fn play_segment(cx: Arc<RwLock<GameContext>>, segment_id: String) {
+    let segment = {
+        let cx_read = cx.read().await;
+        cx_read
+            .get_segment(&segment_id)
+            .expect("Segment ID not found")
+    };
 
     println!("\n{}", segment.narrative);
     if !segment.choices.is_empty() {
@@ -179,11 +198,21 @@ async fn play_segment(cx: Arc<RwLock<GameContext>>, segment: StorySegment) {
 }
 
 #[async_recursion]
-async fn show_choices(cx: Arc<RwLock<GameContext>>, choices: Vec<Choice>) {
-    let selections = choices
-        .iter()
-        .map(|choice| choice.text.as_str())
-        .collect::<Vec<_>>();
+async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
+    let selections = {
+        let cx_read = cx.read().await;
+        choice_ids
+            .iter()
+            .map(|id| {
+                cx_read
+                    .choices
+                    .get(id)
+                    .expect("Choice ID not found")
+                    .text
+                    .clone()
+            })
+            .collect::<Vec<String>>()
+    };
 
     let selection = Select::new()
         .with_prompt("What do you do?")
@@ -192,14 +221,17 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choices: Vec<Choice>) {
         .interact()
         .unwrap();
 
-    cx.write()
-        .unwrap()
-        .choices
-        .insert(choices[selection].id.clone(), choices[selection].clone());
+    let selected_choice_id = &choice_ids[selection];
+    let selected_choice = {
+        let cx_read = cx.read().await;
+        cx_read
+            .get_choice(selected_choice_id)
+            .expect("Choice ID not found")
+    };
 
-    println!("\n{}", choices[selection].consequence);
+    println!("\n{}", selected_choice.consequence);
 
-    if let Some(next_segment) = choices[selection].next_segment.as_ref() {
-        play_segment(cx, (**next_segment).clone()).await;
+    if let Some(next_segment) = selected_choice.next_segment {
+        play_segment(cx, next_segment.id).await;
     }
 }
