@@ -1,12 +1,12 @@
-use async_std::fs::File;
 use async_std::prelude::*;
 use async_std::task;
 use dialoguer::Select;
-use serde::{Deserialize, Serialize};
 use std::pin::Pin;
+use uuid::Uuid;
 
 #[derive(Clone)]
 struct StorySegment {
+    id: String,
     narrative: String,
     choices: Vec<Choice>,
 }
@@ -14,6 +14,7 @@ struct StorySegment {
 impl StorySegment {
     fn new(narrative: &str, choices: Vec<Choice>) -> Self {
         Self {
+            id: Uuid::new_v4().to_string(),
             narrative: narrative.to_string(),
             choices,
         }
@@ -22,6 +23,7 @@ impl StorySegment {
 
 #[derive(Clone)]
 struct Choice {
+    id: String,
     text: String,
     consequence: String,
     next_segment: Option<Box<StorySegment>>,
@@ -30,6 +32,7 @@ struct Choice {
 impl Choice {
     fn new(text: &str, consequence: &str, next_segment: Option<StorySegment>) -> Self {
         Self {
+            id: Uuid::new_v4().to_string(),
             text: text.to_string(),
             consequence: consequence.to_string(),
             next_segment: next_segment.map(Box::new),
