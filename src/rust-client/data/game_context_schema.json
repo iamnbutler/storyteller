@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GameContext",
+  "type": "object",
+  "required": [
+    "choices",
+    "segments"
+  ],
+  "properties": {
+    "choices": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Choice"
+      }
+    },
+    "segments": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/StorySegment"
+      }
+    }
+  },
+  "definitions": {
+    "Choice": {
+      "type": "object",
+      "required": [
+        "consequence",
+        "id",
+        "text"
+      ],
+      "properties": {
+        "consequence": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "next_segment": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/StorySegment"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "StorySegment": {
+      "type": "object",
+      "required": [
+        "choices",
+        "id",
+        "narrative"
+      ],
+      "properties": {
+        "choices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Choice"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "narrative": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "choices": {
+    "choice1": {
+      "consequence": "You enter the mysterious cave...",
+      "id": "choice1",
+      "text": "Enter the cave",
+      "next_segment": null
+    }
+  },
+  "segments": {
+    "segment1": {
+      "id": "segment1",
+      "narrative": "Standing at the edge of a dark forest...",
+      "choices": ["choice1"]
+    }
+  }
+}

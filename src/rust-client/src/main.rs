@@ -1,14 +1,20 @@
 use async_recursion::async_recursion;
 use async_std::task;
 use dialoguer::Select;
+use save::{build_save_path, get_save_path};
+use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;
-
+use valico::json_schema;
 mod save;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
 pub struct GameContext {
     segments: HashMap<String, StorySegment>,
     choices: HashMap<String, Choice>,
@@ -21,9 +27,64 @@ impl GameContext {
             choices: HashMap::new(),
         }
     }
+
+    pub fn build_json_schema() -> std::io::Result<()> {
+        // Generate schema for GameContext
+        let schema = schema_for!(GameContext);
+        let schema_json =
+            serde_json::to_string_pretty(&schema).expect("Failed to serialize schema");
+
+        // Example usage of your get_save_path function
+        let path = get_save_path().unwrap_or_else(|_| PathBuf::from("."));
+        let schema_file_path = path.join("game_context_schema.json");
+
+        let mut file = File::create(schema_file_path)?;
+        writeln!(file, "{}", schema_json)?;
+
+        Ok(())
+    }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+fn load_and_validate_game_context() -> Result<(), Box<dyn std::error::Error>> {
+    // Load the schema and the JSON instance (same as your code)
+    let schema_path = build_save_path("game_context_schema.json")?;
+    let schema_json = load_json(schema_path)?;
+    let game_context_path = build_save_path("game_context.json")?;
+    let game_context_json = load_json(game_context_path)?;
+
+    // Create a new scope and compile the schema
+    let mut scope = json_schema::Scope::new();
+    let schema = scope.compile_and_return(schema_json, false)?;
+
+    // Validate the instance against the compiled schema
+    let state = schema.validate(&game_context_json);
+
+    // Check if there were any errors
+    if state.is_valid() {
+        println!("The game context is valid according to the schema.");
+    } else {
+        println!("Validation failed:");
+        for error in &state.errors {
+            println!("- {}", error.get_title());
+        }
+        for suberror in &state.missing {
+            println!("- Missing: {}", suberror);
+        }
+        return Err("Validation failed".into());
+    }
+
+    Ok(())
+}
+
+fn load_json(file_path: PathBuf) -> Result<Value, Box<dyn std::error::Error>> {
+    let mut file = File::open(file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    let json: Value = serde_json::from_str(&contents)?;
+    Ok(json)
+}
+
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
 struct StorySegment {
     id: String,
     narrative: String,
@@ -40,7 +101,7 @@ impl StorySegment {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
 struct Choice {
     id: String,
     text: String,
@@ -64,6 +125,15 @@ fn main() {
 }
 
 async fn async_main() {
+    let game_context = GameContext::build_json_schema();
+    if let Err(e) = game_context {
+        eprintln!("Error generating JSON schema: {}", e);
+    }
+
+    if let Err(e) = load_and_validate_game_context() {
+        eprintln!("Error: {}", e);
+    }
+
     start_game().await;
 }
 

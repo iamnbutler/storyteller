@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::{Choice, GameContext, StorySegment};
 use serde::{Deserialize, Serialize};
 use serde_json::Error as SerdeError;
@@ -5,6 +7,18 @@ use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+
+pub fn get_save_path() -> Result<PathBuf, io::Error> {
+    let project_dir = env::current_dir()?;
+    let save_path = project_dir.join("data");
+    Ok(save_path)
+}
+
+// construct the save path fron thr save dir abd a file name
+pub fn build_save_path(file_name: &str) -> Result<PathBuf, io::Error> {
+    let save_path = get_save_path()?;
+    Ok(save_path.join(file_name))
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SaveData {
@@ -21,15 +35,9 @@ impl SaveData {
         }
     }
 
-    fn get_save_path() -> Result<PathBuf, io::Error> {
-        let project_dir = env::current_dir()?;
-        let save_path = project_dir.join("save");
-        Ok(save_path)
-    }
-
     pub fn quicksave(cx: &GameContext) -> Result<(), io::Error> {
         let save_data = Self::save(cx);
-        let save_path = Self::get_save_path()?.join(format!(
+        let save_path = get_save_path()?.join(format!(
             "quicksave_{}.json",
             chrono::Local::now().format("%Y-%m-%d_%H-%M-%S")
         ));
