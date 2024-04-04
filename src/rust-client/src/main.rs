@@ -1,12 +1,15 @@
 use async_recursion::async_recursion;
 use async_std::task;
 use dialoguer::Select;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
+mod save;
+
 #[derive(Clone)]
-struct GameContext {
+pub struct GameContext {
     segments: HashMap<String, StorySegment>,
     choices: HashMap<String, Choice>,
 }
@@ -20,7 +23,7 @@ impl GameContext {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct StorySegment {
     id: String,
     narrative: String,
@@ -37,7 +40,7 @@ impl StorySegment {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Choice {
     id: String,
     text: String,
