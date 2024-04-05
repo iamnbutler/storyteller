@@ -1,19 +1,18 @@
 #![allow(unused)]
 
-use async_recursion::async_recursion;
-use async_std::sync::RwLock;
-use async_std::task;
 use dialoguer::Select;
 use gpui::*;
 use save::{build_save_path, get_save_path, SaveData};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use uuid::Uuid;
 use valico::json_schema;
 
@@ -37,8 +36,8 @@ impl GameContext {
         }
     }
 
-    pub async fn add_segment_async(cx: Arc<RwLock<GameContext>>, new_segment: StorySegment) {
-        let mut game_ctx = cx.write().await;
+    pub fn add_segment(cx: Arc<Mutex<GameContext>>, new_segment: StorySegment) {
+        let mut game_ctx = cx.lock().unwrap(); // Obtains a lock and panics on error
         game_ctx
             .segments
             .insert(new_segment.id.clone(), new_segment);
@@ -52,8 +51,8 @@ impl GameContext {
         self.segments.values().cloned().collect()
     }
 
-    pub async fn add_choice_async(cx: Arc<RwLock<GameContext>>, new_choice: Choice) {
-        let mut game_ctx = cx.write().await;
+    pub fn add_choice(cx: Arc<Mutex<GameContext>>, new_choice: Choice) {
+        let mut game_ctx = cx.lock().unwrap(); // Same approach as above
         game_ctx.choices.insert(new_choice.id.clone(), new_choice);
     }
 
@@ -196,6 +195,18 @@ impl StorySegment {
             choices: choice_ids,
         }
     }
+
+    pub fn get_id(&self) -> String {
+        self.id.clone()
+    }
+
+    pub fn get_narrative(&self) -> String {
+        self.narrative.clone()
+    }
+
+    pub fn get_choice_ids(&self) -> Vec<String> {
+        self.choices.clone()
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
@@ -217,22 +228,22 @@ impl Choice {
     }
 }
 
-async fn start_game(game_context: GameContext) {
+fn start_game(game_context: GameContext) {
     println!("Starting the game...");
 
-    let cx = Arc::new(RwLock::new(game_context));
+    let cx = Arc::new(Mutex::new(game_context));
 
-    character_creation(cx.clone()).await;
+    character_creation(cx.clone());
 
     let first_segment_id = {
-        let game_context = cx.read().await;
+        let game_context = cx.lock().unwrap();
         game_context.segments.values().next().unwrap().id.clone()
     };
 
-    play_segment(cx.clone(), first_segment_id).await;
+    play_segment(cx.clone(), first_segment_id);
 }
 
-async fn character_creation(cx: Arc<RwLock<GameContext>>) {
+fn character_creation(cx: Arc<Mutex<GameContext>>) {
     println!("Create your character");
 
     let surname = "Jason";
@@ -241,14 +252,14 @@ async fn character_creation(cx: Arc<RwLock<GameContext>>) {
 
     let character = Character::new(&surname, family_name.as_deref(), nickname.as_deref());
 
-    cx.write().await.add_character(character.clone());
+    cx.lock().unwrap().add_character(character.clone());
 
     println!("Character created: {}", character.full_name());
 }
 
-async fn play_segment(cx: Arc<RwLock<GameContext>>, segment_id: String) {
+fn play_segment(cx: Arc<Mutex<GameContext>>, segment_id: String) {
     let segment = {
-        let cx_read = cx.read().await;
+        let cx_read = cx.lock().unwrap();
         cx_read
             .get_segment(&segment_id)
             .expect("Segment ID not found")
@@ -256,16 +267,15 @@ async fn play_segment(cx: Arc<RwLock<GameContext>>, segment_id: String) {
 
     println!("\n{}", segment.narrative);
     if !segment.choices.is_empty() {
-        show_choices(cx, segment.choices).await;
+        show_choices(cx, segment.choices);
     } else {
         println!("This path has come to an end.");
     }
 }
 
-#[async_recursion]
-async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
+fn show_choices(cx: Arc<Mutex<GameContext>>, choice_ids: Vec<String>) {
     let mut selections = {
-        let cx_read = cx.read().await;
+        let cx_read = cx.lock().unwrap();
         choice_ids
             .iter()
             .map(|id| {
@@ -291,11 +301,11 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
 
     // Check if the user selected "More options"
     if selection == selections.len() - 1 {
-        show_more_options(cx).await;
+        show_more_options(cx);
     } else {
         let selected_choice_id = &choice_ids[selection];
         let selected_choice = {
-            let cx_read = cx.read().await;
+            let cx_read = cx.lock().unwrap();
             cx_read
                 .get_choice(selected_choice_id)
                 .expect("Choice ID not found")
@@ -304,14 +314,13 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
         println!("\n{}", selected_choice.consequence);
 
         if let Some(next_segment) = selected_choice.next_segment {
-            play_segment(cx, next_segment).await;
+            play_segment(cx, next_segment);
         }
     }
 }
 
-#[async_recursion]
-async fn show_more_options(cx: Arc<RwLock<GameContext>>) {
-    let cx_read = cx.read().await;
+fn show_more_options(cx: Arc<Mutex<GameContext>>) {
+    let cx_read = cx.lock().unwrap();
 
     let character = cx_read.character.clone();
 
@@ -332,11 +341,11 @@ async fn show_more_options(cx: Arc<RwLock<GameContext>>) {
         .unwrap();
 
     match selection {
-        0 => play_segment(cx.clone(), current_segment_id).await,
+        0 => play_segment(cx.clone(), current_segment_id),
         1 => {
             if let Some(character) = character {
                 character.character_sheet();
-                show_more_options(cx.clone()).await;
+                show_more_options(cx.clone());
             } else {
                 println!("No character created yet.")
             }
@@ -363,35 +372,19 @@ impl Render for HelloWorld {
             .items_center()
             .text_xl()
             .text_color(rgb(0xffffff))
-            .child(format!("Hello, {}!", &self.text))
+            .child(format!("{}", &self.text))
     }
 }
 
 fn main() {
-    // task::block_on(async_main());
-
-    App::new().run(|cx: &mut AppContext| {
-        cx.open_window(WindowOptions::default(), |cx| {
-            cx.new_view(|_cx| HelloWorld {
-                text: "World".into(),
-            })
-        });
-    });
-}
-
-async fn async_main() {
     let context_path = if let Ok(path) = build_save_path("game_context.json") {
         path
     } else {
         eprintln!("Error building save path for game context");
         return;
     };
-    let game_context = GameContext::build_json_schema();
-    if let Err(e) = game_context {
-        eprintln!("Error generating JSON schema: {}", e);
-    }
 
-    let game_context = match load_and_validate_game_context(context_path.clone()) {
+    let game_context = match load_and_validate_game_context(context_path) {
         Ok(gc) => gc,
         Err(e) => {
             eprintln!("Error: {}", e);
@@ -399,5 +392,20 @@ async fn async_main() {
         }
     };
 
-    start_game(game_context).await;
+    GameContext::build_json_schema().expect("Error generating JSON schema");
+
+    start_game(game_context.clone());
+
+    let text = game_context
+        .segments
+        .values()
+        .next()
+        .unwrap()
+        .get_narrative();
+
+    App::new().run(|cx: &mut AppContext| {
+        cx.open_window(WindowOptions::default(), |cx| {
+            cx.new_view(|_cx| HelloWorld { text: text.into() })
+        });
+    });
 }
