@@ -4,6 +4,7 @@ use async_recursion::async_recursion;
 use async_std::sync::RwLock;
 use async_std::task;
 use dialoguer::Select;
+use gpui::*;
 use save::{build_save_path, get_save_path, SaveData};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
@@ -15,7 +16,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use uuid::Uuid;
 use valico::json_schema;
-mod main2;
+
 mod save;
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
@@ -216,33 +217,6 @@ impl Choice {
     }
 }
 
-fn main() {
-    task::block_on(async_main());
-}
-
-async fn async_main() {
-    let context_path = if let Ok(path) = build_save_path("game_context.json") {
-        path
-    } else {
-        eprintln!("Error building save path for game context");
-        return;
-    };
-    let game_context = GameContext::build_json_schema();
-    if let Err(e) = game_context {
-        eprintln!("Error generating JSON schema: {}", e);
-    }
-
-    let game_context = match load_and_validate_game_context(context_path.clone()) {
-        Ok(gc) => gc,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            return;
-        }
-    };
-
-    start_game(game_context).await;
-}
-
 async fn start_game(game_context: GameContext) {
     println!("Starting the game...");
 
@@ -373,4 +347,57 @@ async fn show_more_options(cx: Arc<RwLock<GameContext>>) {
         }
         _ => panic!("Unexpected option"),
     }
+}
+
+struct HelloWorld {
+    text: SharedString,
+}
+
+impl Render for HelloWorld {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .bg(rgb(0x2e7d32))
+            .size_full()
+            .justify_center()
+            .items_center()
+            .text_xl()
+            .text_color(rgb(0xffffff))
+            .child(format!("Hello, {}!", &self.text))
+    }
+}
+
+fn main() {
+    // task::block_on(async_main());
+
+    App::new().run(|cx: &mut AppContext| {
+        cx.open_window(WindowOptions::default(), |cx| {
+            cx.new_view(|_cx| HelloWorld {
+                text: "World".into(),
+            })
+        });
+    });
+}
+
+async fn async_main() {
+    let context_path = if let Ok(path) = build_save_path("game_context.json") {
+        path
+    } else {
+        eprintln!("Error building save path for game context");
+        return;
+    };
+    let game_context = GameContext::build_json_schema();
+    if let Err(e) = game_context {
+        eprintln!("Error generating JSON schema: {}", e);
+    }
+
+    let game_context = match load_and_validate_game_context(context_path.clone()) {
+        Ok(gc) => gc,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
+    };
+
+    start_game(game_context).await;
 }
