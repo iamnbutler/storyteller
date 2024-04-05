@@ -1,17 +1,80 @@
 {
+  "character": null,
   "choices": {
     "choice1": {
-      "consequence": "You enter the mysterious cave...",
+      "consequence": "You enter the mysterious cave, the air cool and damp.",
       "id": "choice1",
       "text": "Enter the cave",
-      "next_segment": null
+      "next_segment": "segment2"
+    },
+    "choice2": {
+      "consequence": "You decide to set up camp, hoping to explore in the morning.",
+      "id": "choice2",
+      "text": "Set up camp for the night",
+      "next_segment": "segment3"
+    },
+    "choice3": {
+      "consequence": "Delving deeper into the cave, the sounds of an unknown creature echo around you.",
+      "id": "choice3",
+      "text": "Continue deeper into the cave",
+      "next_segment": "segment4"
+    },
+    "choice4": {
+      "consequence": "You carefully climb down the rocky decline, finding an ancient cavern below.",
+      "id": "choice4",
+      "text": "Descend into the lower cavern",
+      "next_segment": "segment5"
+    },
+    "choice5": {
+      "consequence": "You retrace your steps, exiting the cave to the safety of daylight.",
+      "id": "choice5",
+      "text": "Return to the cave entrance",
+      "next_segment": "segment1"
+    },
+    "choice6": {
+      "consequence": "As daylight breaks, you're greeted by the sights and sounds of the unknown forest.",
+      "id": "choice6",
+      "text": "Explore the forest at dawn",
+      "next_segment": "segment6"
+    },
+    "choice7": {
+      "consequence": "You decide to rest until morning, a cautious yet wise choice.",
+      "id": "choice7",
+      "text": "Stay at camp until morning",
+      "next_segment": "segment3"
     }
   },
+  "save_data": null,
   "segments": {
     "segment1": {
       "id": "segment1",
-      "narrative": "Standing at the edge of a dark forest...",
-      "choices": ["choice1"]
+      "narrative": "Standing at the edge of a dark forest, you spot a shadowy cave entrance.",
+      "choices": ["choice1", "choice2"]
+    },
+    "segment2": {
+      "id": "segment2",
+      "narrative": "Inside the cave, the path forks into a deeper passage or a precarious descent.",
+      "choices": ["choice3", "choice4", "choice5"]
+    },
+    "segment3": {
+      "id": "segment3",
+      "narrative": "Night passes quietly. Morning brings a choice: explore the unknown forest or return to the cave.",
+      "choices": ["choice6", "choice1"]
+    },
+    "segment4": {
+      "id": "segment4",
+      "narrative": "The further you venture, the more alien the cave becomes. Strange, bioluminescent fungi light your path.",
+      "choices": ["choice4", "choice5"]
+    },
+    "segment5": {
+      "id": "segment5",
+      "narrative": "Below, you discover an ancient underground lake, its waters clear and mysterious.",
+      "choices": ["choice5"]
+    },
+    "segment6": {
+      "id": "segment6",
+      "narrative": "The forest is alive with sounds. Sunlight filters through thick foliage, revealing paths not taken.",
+      "choices": ["choice7", "choice2"]
     }
   }
 }

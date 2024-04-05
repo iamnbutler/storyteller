@@ -2,7 +2,7 @@ use async_recursion::async_recursion;
 use async_std::sync::RwLock;
 use async_std::task;
 use dialoguer::Select;
-use save::{build_save_path, get_save_path};
+use save::{build_save_path, get_save_path, SaveData};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,13 +19,17 @@ mod save;
 pub struct GameContext {
     segments: HashMap<String, StorySegment>,
     choices: HashMap<String, Choice>,
+    save_data: Option<SaveData>,
+    character: Option<Character>,
 }
 
 impl GameContext {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             segments: HashMap::new(),
             choices: HashMap::new(),
+            save_data: None,
+            character: None,
         }
     }
 
@@ -51,6 +55,14 @@ impl GameContext {
 
     pub fn get_choice(&self, id: &str) -> Option<Choice> {
         self.choices.get(id).cloned()
+    }
+
+    pub fn add_character(&mut self, character: Character) {
+        self.character = Some(character);
+    }
+
+    pub fn get_character(&self) -> Option<Character> {
+        self.character.clone()
     }
 
     pub fn build_json_schema() -> std::io::Result<()> {
@@ -106,7 +118,55 @@ fn load_json(file_path: PathBuf) -> Result<Value, Box<dyn std::error::Error>> {
 }
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
-struct StorySegment {
+pub struct Character {
+    surname: String,
+    family_name: Option<String>,
+    nickname: Option<String>,
+}
+
+impl Character {
+    /// Create a new [Character]
+    pub fn new(surname: &str, family_name: Option<&str>, nickname: Option<&str>) -> Self {
+        Self {
+            surname: surname.to_string(),
+            family_name: family_name.map(|s| s.to_string()),
+            nickname: nickname.map(|s| s.to_string()),
+        }
+    }
+
+    /// Get the full name of the character.
+    ///
+    /// If a `family_name` is provided, it will be included in the full name.
+    ///
+    /// If a `nickname` is provided, it will added between the `surname` and `family_name`.
+    pub fn full_name(&self) -> String {
+        let mut full_name = self.surname.clone();
+        if let Some(nickname) = &self.nickname {
+            full_name.push_str(" \"");
+            full_name.push_str(nickname);
+            full_name.push_str("\" ");
+        }
+        if let Some(family_name) = &self.family_name {
+            full_name.push_str(family_name);
+        }
+        full_name
+    }
+
+    /// Get the display name of the character.
+    ///
+    /// If a `nickname` is provided, it will be used as the display name,
+    /// otherwise the `surname` will be used.
+    pub fn display_name(&self) -> String {
+        if let Some(nickname) = &self.nickname {
+            nickname.clone()
+        } else {
+            self.surname.clone()
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
+pub struct StorySegment {
     id: String,
     narrative: String,
     choices: Vec<String>,
@@ -123,20 +183,20 @@ impl StorySegment {
 }
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
-struct Choice {
+pub struct Choice {
     id: String,
     text: String,
     consequence: String,
-    next_segment: Option<Box<StorySegment>>,
+    next_segment: Option<String>,
 }
 
 impl Choice {
-    fn new(text: &str, consequence: &str, next_segment: Option<StorySegment>) -> Self {
+    fn new(text: &str, consequence: &str, next_segment: Option<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             text: text.to_string(),
             consequence: consequence.to_string(),
-            next_segment: next_segment.map(Box::new),
+            next_segment,
         }
     }
 }
@@ -173,12 +233,28 @@ async fn start_game(game_context: GameContext) {
 
     let cx = Arc::new(RwLock::new(game_context));
 
+    character_creation(cx.clone()).await;
+
     let first_segment_id = {
         let game_context = cx.read().await;
         game_context.segments.values().next().unwrap().id.clone()
     };
 
     play_segment(cx.clone(), first_segment_id).await;
+}
+
+async fn character_creation(cx: Arc<RwLock<GameContext>>) {
+    println!("Create your character");
+
+    let surname = "Jason";
+    let family_name = Some("Asano");
+    let nickname = Some("Starlight Rider");
+
+    let character = Character::new(&surname, family_name.as_deref(), nickname.as_deref());
+
+    cx.write().await.add_character(character.clone());
+
+    println!("Character created: {}", character.full_name());
 }
 
 async fn play_segment(cx: Arc<RwLock<GameContext>>, segment_id: String) {
@@ -232,6 +308,6 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
     println!("\n{}", selected_choice.consequence);
 
     if let Some(next_segment) = selected_choice.next_segment {
-        play_segment(cx, next_segment.id).await;
+        play_segment(cx, next_segment).await;
     }
 }

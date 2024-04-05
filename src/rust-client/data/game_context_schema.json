@@ -7,11 +7,31 @@
     "segments"
   ],
   "properties": {
+    "character": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Character"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "choices": {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/Choice"
       }
+    },
+    "save_data": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SaveData"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "segments": {
       "type": "object",
@@ -21,6 +41,29 @@
     }
   },
   "definitions": {
+    "Character": {
+      "type": "object",
+      "required": [
+        "surname"
+      ],
+      "properties": {
+        "family_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nickname": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "surname": {
+          "type": "string"
+        }
+      }
+    },
     "Choice": {
       "type": "object",
       "required": [
@@ -36,17 +79,34 @@
           "type": "string"
         },
         "next_segment": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/StorySegment"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "string",
+            "null"
           ]
         },
         "text": {
           "type": "string"
+        }
+      }
+    },
+    "SaveData": {
+      "type": "object",
+      "required": [
+        "choices",
+        "segments"
+      ],
+      "properties": {
+        "choices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Choice"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StorySegment"
+          }
         }
       }
     },

@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use crate::{Choice, GameContext, StorySegment};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as SerdeError;
 use std::env;
@@ -19,13 +20,20 @@ pub fn build_save_path(file_name: &str) -> Result<PathBuf, io::Error> {
     Ok(save_path.join(file_name))
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
 pub struct SaveData {
     segments: Vec<StorySegment>,
     choices: Vec<Choice>,
 }
 
 impl SaveData {
+    pub fn new() -> Self {
+        Self {
+            segments: Vec::new(),
+            choices: Vec::new(),
+        }
+    }
+
     /// Saves the current [GameContext]
     pub fn save(cx: &GameContext) -> Self {
         Self {
