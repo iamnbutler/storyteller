@@ -163,6 +163,18 @@ impl Character {
             self.surname.clone()
         }
     }
+
+    /// Get a formatted character sheet.
+    pub fn character_sheet(&self) {
+        let sheet = format!(
+            "Character Sheet\n\nSurname: {}\nFamily Name: {}\nNickname: {}\n",
+            self.surname,
+            self.family_name.as_deref().unwrap_or("N/A"),
+            self.nickname.as_deref().unwrap_or("N/A")
+        );
+
+        println!("{}", sheet);
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
@@ -275,7 +287,7 @@ async fn play_segment(cx: Arc<RwLock<GameContext>>, segment_id: String) {
 
 #[async_recursion]
 async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
-    let selections = {
+    let mut selections = {
         let cx_read = cx.read().await;
         choice_ids
             .iter()
@@ -290,6 +302,9 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
             .collect::<Vec<String>>()
     };
 
+    // Add "More options" to the list of choices
+    selections.push("More options".to_string());
+
     let selection = Select::new()
         .with_prompt("What do you do?")
         .default(0)
@@ -297,17 +312,57 @@ async fn show_choices(cx: Arc<RwLock<GameContext>>, choice_ids: Vec<String>) {
         .interact()
         .unwrap();
 
-    let selected_choice_id = &choice_ids[selection];
-    let selected_choice = {
+    // Check if the user selected "More options"
+    if selection == selections.len() - 1 {
+        show_more_options(cx).await;
+    } else {
+        let selected_choice_id = &choice_ids[selection];
+        let selected_choice = {
+            let cx_read = cx.read().await;
+            cx_read
+                .get_choice(selected_choice_id)
+                .expect("Choice ID not found")
+        };
+
+        println!("\n{}", selected_choice.consequence);
+
+        if let Some(next_segment) = selected_choice.next_segment {
+            play_segment(cx, next_segment).await;
+        }
+    }
+}
+
+#[async_recursion]
+async fn show_more_options(cx: Arc<RwLock<GameContext>>) {
+    let character = {
         let cx_read = cx.read().await;
-        cx_read
-            .get_choice(selected_choice_id)
-            .expect("Choice ID not found")
+        cx_read.character.clone()
     };
 
-    println!("\n{}", selected_choice.consequence);
+    let more_options = vec!["Back to Choices", "Show character sheet", "Quit Game"];
 
-    if let Some(next_segment) = selected_choice.next_segment {
-        play_segment(cx, next_segment).await;
+    let selection = Select::new()
+        .with_prompt("Select an option")
+        .default(0)
+        .items(&more_options)
+        .interact()
+        .unwrap();
+
+    match selection {
+        // TODO: we need a way to know which segment to go back to
+        0 => unimplemented!("Back to Choices not implemented yet"),
+        1 => {
+            if let Some(character) = character {
+                character.character_sheet();
+                show_more_options(cx).await;
+            } else {
+                println!("No character created yet.")
+            }
+        }
+        2 => {
+            println!("Quitting game...");
+            std::process::exit(0);
+        }
+        _ => panic!("Unexpected option"),
     }
 }
