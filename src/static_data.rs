@@ -1,4 +1,4 @@
-use crate::{new_id, Choice, NarrativeSegment, Scenario};
+use crate::{new_id, Choice, NarrativeSegment, PlayerProgress, Scenario};
 
 pub fn intro_scenario() -> Scenario {
     let first_segment = NarrativeSegment {
