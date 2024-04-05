@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
+use crate::static_data::intro_scenario;
+
+mod static_data;
+
 struct Action {
     /// Starts a new game
     start_game: Box<dyn Fn(&mut Game) -> GameResult>,
@@ -26,6 +30,10 @@ enum GameError {
 }
 
 type GameResult = Result<(), GameError>;
+
+pub fn new_id() -> String {
+    Uuid::new_v4().to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 struct Scenario {
@@ -88,7 +96,7 @@ struct Game {
 fn start_game(game: &mut Game) -> GameResult {
     println!("Storyteller - Version: {}\n", game.version);
 
-    game.start_scenario_id = "initial_scenario_id".to_owned();
+    game.start_scenario_id = intro_scenario().id;
     Ok(())
 }
 
