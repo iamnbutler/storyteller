@@ -207,6 +207,23 @@ impl StorySegment {
     pub fn get_choice_ids(&self) -> Vec<String> {
         self.choices.clone()
     }
+
+    pub fn get_choices(&self, game_context: GameContext) -> Vec<Choice> {
+        self.choices
+            .iter()
+            .map(|choice_id| game_context.choices.get(choice_id).unwrap().clone())
+            .collect()
+    }
+}
+
+impl RenderOnce for StorySegment {
+    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .py_2()
+            .child(div().child(self.narrative.clone()))
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
@@ -358,11 +375,11 @@ fn show_more_options(cx: Arc<Mutex<GameContext>>) {
     }
 }
 
-struct HelloWorld {
+struct GameWindow {
     text: SharedString,
 }
 
-impl Render for HelloWorld {
+impl Render for GameWindow {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .flex()
@@ -394,7 +411,7 @@ fn main() {
 
     GameContext::build_json_schema().expect("Error generating JSON schema");
 
-    start_game(game_context.clone());
+    // start_game(game_context.clone());
 
     let text = game_context
         .segments
@@ -405,7 +422,7 @@ fn main() {
 
     App::new().run(|cx: &mut AppContext| {
         cx.open_window(WindowOptions::default(), |cx| {
-            cx.new_view(|_cx| HelloWorld { text: text.into() })
+            cx.new_view(|_cx| GameWindow { text: text.into() })
         });
     });
 }
