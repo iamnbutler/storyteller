@@ -141,3 +141,5 @@ dist
 
 # Rust artifacts
 target/
+
+venv
