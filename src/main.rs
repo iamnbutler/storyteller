@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+use app::window_options;
 use dialoguer::Select;
 use gpui::*;
 use save::{build_save_path, get_save_path, SaveData};
@@ -16,7 +17,9 @@ use std::{
 use uuid::Uuid;
 use valico::json_schema;
 
+mod app;
 mod save;
+mod ui;
 
 #[derive(Clone, Serialize, Deserialize, JsonSchema)]
 pub struct GameContext {
@@ -375,24 +378,6 @@ fn show_more_options(cx: Arc<Mutex<GameContext>>) {
     }
 }
 
-struct GameWindow {
-    text: SharedString,
-}
-
-impl Render for GameWindow {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .bg(rgb(0x2e7d32))
-            .size_full()
-            .justify_center()
-            .items_center()
-            .text_xl()
-            .text_color(rgb(0xffffff))
-            .child(format!("{}", &self.text))
-    }
-}
-
 fn main() {
     let context_path = if let Ok(path) = build_save_path("game_context.json") {
         path
@@ -421,8 +406,8 @@ fn main() {
         .get_narrative();
 
     App::new().run(|cx: &mut AppContext| {
-        cx.open_window(WindowOptions::default(), |cx| {
-            cx.new_view(|_cx| GameWindow { text: text.into() })
+        cx.open_window(window_options(540, 960, cx), |cx| {
+            cx.new_view(|_cx| ui::GameWindow {})
         });
     });
 }
