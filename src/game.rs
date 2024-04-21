@@ -40,7 +40,7 @@ impl GameContext {
     }
 
     pub fn add_segment(cx: Arc<Mutex<GameContext>>, new_segment: StorySegment) {
-        let mut game_ctx = cx.lock().unwrap();
+        let mut game_ctx = cx.lock().unwrap(); // Obtains a lock and panics on error
         game_ctx
             .segments
             .insert(new_segment.id.clone(), new_segment);

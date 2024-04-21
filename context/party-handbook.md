@@ -14,6 +14,23 @@ A balanced D&D party typically incorporates characters who fulfill essential rol
 
 ### A. Roles within the Party
 
+> Dorothy followed her through many of the beautiful rooms in her castle.
+
+> Dorothy followed her through many of the beautiful rooms in her castle.
+>
+> The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
+
+> Dorothy followed her through many of the beautiful rooms in her castle.
+>
+> > The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
+
+> #### The quarterly results look great!
+>
+> - Revenue was off the chart.
+> - Profits were higher than ever.
+>
+>   _Everything_ is going according to **plan**.
+
 A robust party includes:
 
 - A **tank** for defense and frontline combat.
