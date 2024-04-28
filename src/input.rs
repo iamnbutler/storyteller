@@ -1,8 +1,8 @@
 use gpui::{
-    div, hsla, prelude::FluentBuilder, px, AppContext, Context, Edges, ElementId, EventEmitter,
-    FocusHandle, FocusableView, Hsla, InteractiveElement, IntoElement, Model, MouseButton,
-    ParentElement, Render, SharedString, StatefulInteractiveElement, Styled, StyledText, TextStyle,
-    View, ViewContext, VisualContext,
+    div, hsla, prelude::FluentBuilder, px, AppContext, Context, CursorStyle, Edges, ElementId,
+    EventEmitter, FocusHandle, FocusableView, Hsla, InteractiveElement, IntoElement, Model,
+    MouseButton, ParentElement, Render, SharedString, StatefulInteractiveElement, Styled,
+    StyledText, TextStyle, View, ViewContext, VisualContext,
 };
 
 fn transparent() -> Hsla {
@@ -158,11 +158,25 @@ impl Input {
 impl Render for Input {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         // == Style ==
-
         let mut style = self.style.clone();
-        let text = style.text.clone();
-        let value = self.value(cx);
+        let is_focused = self.is_focused(cx);
 
+        let value = if (self.value(cx).len() == 0) {
+            println!(
+                "Placeholder: {:?}",
+                self.placeholder.clone().unwrap_or_else(|| "".into())
+            );
+            style.text.color = hsla(0.0, 0.0, 0.67, 1.0);
+            self.placeholder.clone().unwrap_or_else(|| "".into())
+        } else {
+            println!("Value: {:?}", self.value(cx));
+            style.text.color = TextStyle::default().color;
+            self.value(cx)
+        };
+
+        let text = style.text.clone();
+
+        // == Size ==
         let padding_inset = 1.0;
         let padding = if let Some(ring) = style.ring {
             ring.width + padding_inset
@@ -173,7 +187,7 @@ impl Render for Input {
         let height = 32.0;
         let calculated_height = height - padding * 2.0;
 
-        let width = 128.0;
+        let width = 188.0;
         let calculated_width = width - padding * 2.0;
 
         let mut input = div()
@@ -224,6 +238,7 @@ impl Render for Input {
         }
 
         input
+            .cursor(CursorStyle::IBeam)
             .p(px(padding_inset))
             .border_2()
             .border_color(transparent())

@@ -20,7 +20,8 @@ pub struct GameWindow {
 impl GameWindow {
     pub fn new(cx: &mut ViewContext<Self>, game: Game) -> Self {
         let focus_handle = cx.focus_handle();
-        let test_input = cx.new_view(|cx| Input::new(cx, "test-input", "test"));
+        let test_input =
+            cx.new_view(|cx| Input::new(cx, "test-input", "").set_placeholder("Type something..."));
 
         Self {
             focus_handle,
