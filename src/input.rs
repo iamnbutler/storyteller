@@ -9,21 +9,70 @@ use gpui::{
 
 pub struct Cursor {
     visible: bool,
+    position: usize,
     blink: Model<CursorBlink>,
+    buffer: Model<Buffer>,
 }
 
 impl Cursor {
-    fn new(cx: &mut ModelContext<Self>) -> Self {
+    fn new(cx: &mut ViewContext<Self>, buffer: Model<Buffer>) -> Self {
         let blink = cx.new_model(|cx| CursorBlink::new(Duration::from_millis(500), cx));
 
         Self {
             visible: false,
+            position: 0,
             blink,
+            buffer,
         }
     }
 
     pub fn visible(&mut self, visible: bool) {
         self.visible = visible;
+    }
+
+    pub fn move_left(&mut self, cx: &mut ViewContext<Self>) {
+        // TODO: Clamp position to 0
+        if self.position > 0 {
+            self.position -= 1;
+            self.update_buffer_gap(cx);
+        }
+
+        cx.notify();
+
+        println!("Cursor moved left. Cursor position: {}", self.position);
+    }
+
+    pub fn move_right(&mut self, cx: &mut ViewContext<Self>) {
+        // TODO: Clamp position to buffer length
+        let buffer_len = self.buffer.read(cx).text.len();
+        if self.position < buffer_len {
+            self.position += 1;
+            self.update_buffer_gap(cx);
+        }
+
+        cx.notify();
+
+        println!("Cursor moved right. Cursor position: {}", self.position);
+    }
+
+    fn update_buffer_gap(&self, cx: &mut ViewContext<Self>) {
+        let cursor_position = self.position;
+
+        self.buffer.update(cx, move |buffer, _cx| {
+            buffer.move_gap(cursor_position);
+        });
+    }
+}
+
+impl Render for Cursor {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .absolute()
+            .bg(hsla(0.0, 0.0, 0.0, 0.0))
+            .when(self.visible, |then| then.bg(hsla(0.0, 0.0, 0.0, 1.0)))
+            .w_px()
+            .h(px(16.0))
+        // .left(px(style.padding.left))
     }
 }
 
@@ -32,7 +81,7 @@ impl Cursor {
 // Code originally written by Kaylee Simmons,
 // Max Brunsfeld and Kirill Bulatov
 
-use gpui::ModelContext;
+use gpui::{actions, KeyBinding, KeyContext, KeyDownEvent, KeyEvent, Keystroke, ModelContext};
 use smol::Timer;
 use std::time::Duration;
 
@@ -126,6 +175,8 @@ impl CursorBlink {
 
 // Start Input
 
+actions!(focus, [MoveLeft, MoveRight]);
+
 fn transparent() -> Hsla {
     hsla(0.0, 0.0, 0.0, 0.0)
 }
@@ -139,16 +190,121 @@ impl EventEmitter<InputEvent> for Input {}
 
 #[derive(Clone)]
 struct Buffer {
-    text: SharedString,
-    cursor_position: usize,
+    text: Vec<char>,
+    gap_start: usize,
+    gap_end: usize,
 }
 
 impl Buffer {
-    fn new(text: impl Into<SharedString>) -> Self {
+    fn new(text: impl Into<String>) -> Self {
+        let text: Vec<char> = text.into().chars().collect();
+        let gap_start = text.len();
+        let gap_end = text.len();
+
         Self {
-            text: text.into(),
-            cursor_position: 0,
+            text,
+            gap_start,
+            gap_end,
         }
+    }
+
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            text: Vec::with_capacity(capacity),
+            gap_start: 0,
+            gap_end: 0,
+        }
+    }
+
+    fn move_gap(&mut self, new_gap_start: usize) {
+        if new_gap_start < self.gap_start {
+            // Move gap left
+            let distance = self.gap_start - new_gap_start;
+            for _ in 0..distance {
+                self.gap_end -= 1;
+                self.gap_start -= 1;
+                self.text.swap(self.gap_end, self.gap_start);
+            }
+        } else if new_gap_start > self.gap_start {
+            // Move gap right
+            let distance = new_gap_start - self.gap_start;
+            for _ in 0..distance {
+                self.text.swap(self.gap_end, self.gap_start);
+                self.gap_end += 1;
+                self.gap_start += 1;
+            }
+        }
+    }
+
+    pub fn move_left(&mut self) {
+        if self.gap_start > 0 {
+            self.move_gap(self.gap_start - 1);
+        }
+    }
+
+    pub fn move_right(&mut self) {
+        if self.gap_end < self.text.len() {
+            self.move_gap(self.gap_start + 1);
+        }
+    }
+    pub fn move_to_start(&mut self) {
+        self.move_gap(0);
+    }
+
+    pub fn move_to_end(&mut self) {
+        self.move_gap(self.text.len() - (self.gap_end - self.gap_start));
+    }
+
+    fn insert(&mut self, cx: &mut ModelContext<Self>, c: char) {
+        // Ensure the gap has space.
+        if self.gap_start == self.gap_end {
+            self.expand_gap();
+        }
+
+        self.text[self.gap_start] = c;
+        self.gap_start += 1;
+
+        cx.notify();
+    }
+
+    fn backspace(&mut self) {
+        if self.gap_start > 0 {
+            self.gap_start -= 1;
+            self.text[self.gap_start] = ' '; // Optional: clear the character for debugging visibility
+        }
+    }
+
+    fn delete(&mut self) {
+        if self.gap_end < self.text.len() {
+            self.text[self.gap_end] = ' '; // Optional: clear the character for cleanliness
+            self.gap_end += 1;
+        }
+    }
+
+    fn expand_gap(&mut self) {
+        let additional_gap_size = self.text.len().max(1); // Double the size or add 1 if it's empty
+        let mut new_text = Vec::with_capacity(self.text.len() + additional_gap_size);
+
+        let (left, right) = self.text.split_at(self.gap_start);
+        new_text.extend_from_slice(left);
+        new_text.extend(vec![' '; additional_gap_size]);
+        new_text.extend_from_slice(&right[self.gap_end - self.gap_start..]);
+
+        self.gap_end += additional_gap_size;
+        self.text = new_text;
+    }
+
+    fn to_string(&self) -> String {
+        self.text[0..self.gap_start]
+            .iter()
+            .chain(self.text[self.gap_end..].iter())
+            .collect()
+    }
+}
+
+impl Into<SharedString> for Buffer {
+    fn into(self) -> SharedString {
+        self.to_string().into()
     }
 }
 
@@ -220,7 +376,7 @@ pub struct Input {
     id: ElementId,
     focus_handle: FocusHandle,
     buffer: Model<Buffer>,
-    cursor: Model<Cursor>,
+    cursor: View<Cursor>,
     cursor_visible: bool,
     placeholder: Option<SharedString>,
     style: InputStyle,
@@ -230,15 +386,18 @@ impl Input {
     pub fn new(
         cx: &mut ViewContext<Self>,
         id: impl Into<ElementId>,
-        value: impl Into<SharedString>,
+        value: impl Into<String>,
     ) -> Self {
+        cx.bind_keys([KeyBinding::new("left", MoveLeft, Some("input"))]);
+        cx.bind_keys([KeyBinding::new("right", MoveRight, Some("input"))]);
+
         let focus_handle = cx.focus_handle();
         cx.on_focus(&focus_handle, Self::handle_focus).detach();
         cx.on_blur(&focus_handle, Self::handle_blur).detach();
 
         let buffer = cx.new_model(|cx| Buffer::new(value));
 
-        let cursor = cx.new_model(|cx| Cursor::new(cx));
+        let cursor = cx.new_view(|cx| Cursor::new(cx, buffer.clone()));
 
         Self {
             id: id.into(),
@@ -262,7 +421,7 @@ impl Input {
     }
 
     pub fn value(&self, cx: &ViewContext<Self>) -> SharedString {
-        self.buffer.read(cx).text.clone()
+        self.buffer.read(cx).to_string().into()
     }
 
     fn handle_focus(&mut self, cx: &mut ViewContext<Self>) {
@@ -315,10 +474,64 @@ impl Render for Input {
         let width = 188.0;
         let calculated_width = width - padding * 2.0;
 
+        let cursor = self.cursor.clone();
+        let cursor_2 = self.cursor.clone();
+        let cursor_current_position = self.cursor.clone().read(cx).position as f32;
+        let buffer = self.buffer.clone();
+
         let mut input = div()
             .id(self.id.clone())
             // TODO: Inputs should have unique group ids
             .group("input")
+            .track_focus(&self.focus_handle)
+            .key_context("input")
+            .on_action(cx.listener(move |_, _action: &MoveRight, cx| {
+                let cursor_clone = cursor.clone();
+
+                cursor_clone.update(cx, |cursor, cx| cursor.move_right(cx))
+            }))
+            .on_action(cx.listener(move |_, _action: &MoveLeft, cx| {
+                let cursor_clone_2 = cursor_2.clone();
+
+                cursor_clone_2.update(cx, |cursor, cx| cursor.move_left(cx))
+            }))
+            .on_key_down(cx.listener(move |_, event: &KeyDownEvent, cx| {
+                let is_printable = event
+                    .keystroke
+                    .key
+                    .chars()
+                    .all(|c| c.is_ascii_graphic() || c.is_whitespace());
+
+                if is_printable {
+                    let buffer_clone = buffer.clone();
+                    buffer_clone.update(cx, |buffer, cx| {
+                        let key = event.keystroke.key.clone();
+
+                        let mut char: Option<char> = "".chars().next();
+
+                        if key == "space" {
+                            char = " ".chars().next()
+                        } else {
+                            char = key.chars().next()
+                        }
+
+                        if let Some(char) = char {
+                            buffer.insert(cx, char);
+                        } else {
+                            println!("No char found for {:?}", key);
+                        }
+                    });
+
+                    cx.notify();
+
+                    println!("Printable key down on parent {:?}", event)
+                } else {
+                    // Non-printable key pressed, handle accordingly or ignore.
+                    println!("Non-printable key down ignored {:?}", event)
+                }
+            }))
+            .on_mouse_down(MouseButton::Left, |_, cx| cx.stop_propagation())
+            .on_click(cx.listener(|this, _event, cx| cx.focus_self()))
             .relative()
             .flex()
             .h(px(calculated_height))
@@ -374,8 +587,14 @@ impl Render for Input {
                     .border_color(ring.color)
                     .rounded(px(ring.radius))
             })
-            .on_mouse_down(MouseButton::Left, |_, cx| cx.stop_propagation())
-            .on_click(cx.listener(|this, _event, cx| cx.focus_self()))
+            // .on_key_down(cx.listener(
+            //     |this,
+            //      KeyDownEvent {
+            //          keystroke: Keystroke::parse("right"),
+            //          is_held: false,
+            //      },
+            //      cx| {},
+            // ))
             .child(
                 div()
                     .id("input_inner")
@@ -416,7 +635,8 @@ impl Render for Input {
                             })
                             .w_px()
                             .h(px(calculated_height - 6.0))
-                            .left(px(style.padding.left)),
+                            // This is dumb, just doing this to see the cursor move for now
+                            .left(px(style.padding.left + cursor_current_position * 6.0)),
                     ),
             )
     }
