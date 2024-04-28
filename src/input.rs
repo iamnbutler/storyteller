@@ -5,6 +5,127 @@ use gpui::{
     StyledText, TextStyle, View, ViewContext, VisualContext,
 };
 
+// start Cursor
+
+pub struct Cursor {
+    visible: bool,
+    blink: Model<CursorBlink>,
+}
+
+impl Cursor {
+    fn new(cx: &mut ModelContext<Self>) -> Self {
+        let blink = cx.new_model(|cx| CursorBlink::new(Duration::from_millis(500), cx));
+
+        Self {
+            visible: false,
+            blink,
+        }
+    }
+
+    pub fn visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+}
+
+// Start Blnk
+
+// Code originally written by Kaylee Simmons,
+// Max Brunsfeld and Kirill Bulatov
+
+use gpui::ModelContext;
+use smol::Timer;
+use std::time::Duration;
+
+pub struct CursorBlink {
+    speed: Duration,
+    count: usize,
+    paused: bool,
+    visible: bool,
+    enabled: bool,
+}
+
+impl CursorBlink {
+    pub fn new(speed: Duration, cx: &mut ModelContext<Self>) -> Self {
+        Self {
+            speed,
+
+            count: 0,
+            paused: false,
+            visible: true,
+            enabled: false,
+        }
+    }
+
+    fn next_count(&mut self) -> usize {
+        self.count += 1;
+        self.count
+    }
+
+    pub fn pause_blinking(&mut self, cx: &mut ModelContext<Self>) {
+        self.show_cursor(cx);
+
+        let count = self.next_count();
+        let interval = self.speed;
+        cx.spawn(|this, mut cx| async move {
+            Timer::after(interval).await;
+            this.update(&mut cx, |this, cx| this.resume_cursor_blinking(count, cx))
+        })
+        .detach();
+    }
+
+    fn resume_cursor_blinking(&mut self, count: usize, cx: &mut ModelContext<Self>) {
+        if count == self.count {
+            self.paused = false;
+            self.blink_cursors(count, cx);
+        }
+    }
+
+    fn blink_cursors(&mut self, count: usize, cx: &mut ModelContext<Self>) {
+        if count == self.count && self.enabled && !self.paused {
+            self.visible = !self.visible;
+            cx.notify();
+
+            let count = self.next_count();
+            let interval = self.speed;
+            cx.spawn(|this, mut cx| async move {
+                Timer::after(interval).await;
+                if let Some(this) = this.upgrade() {
+                    this.update(&mut cx, |this, cx| this.blink_cursors(count, cx))
+                        .ok();
+                }
+            })
+            .detach();
+        }
+    }
+
+    pub fn show_cursor(&mut self, cx: &mut ModelContext<'_, CursorBlink>) {
+        if !self.visible {
+            self.visible = true;
+            cx.notify();
+        }
+    }
+
+    pub fn enable(&mut self, cx: &mut ModelContext<Self>) {
+        if self.enabled {
+            return;
+        }
+
+        self.enabled = true;
+        self.visible = false;
+        self.blink_cursors(self.count, cx);
+    }
+
+    pub fn disable(&mut self, _cx: &mut ModelContext<Self>) {
+        self.enabled = false;
+    }
+
+    pub fn visible(&self) -> bool {
+        self.visible
+    }
+}
+
+// Start Input
+
 fn transparent() -> Hsla {
     hsla(0.0, 0.0, 0.0, 0.0)
 }
@@ -99,7 +220,8 @@ pub struct Input {
     id: ElementId,
     focus_handle: FocusHandle,
     buffer: Model<Buffer>,
-
+    cursor: Model<Cursor>,
+    cursor_visible: bool,
     placeholder: Option<SharedString>,
     style: InputStyle,
 }
@@ -116,10 +238,14 @@ impl Input {
 
         let buffer = cx.new_model(|cx| Buffer::new(value));
 
+        let cursor = cx.new_model(|cx| Cursor::new(cx));
+
         Self {
             id: id.into(),
             focus_handle,
             buffer,
+            cursor,
+            cursor_visible: false,
             placeholder: None,
             style: InputStyle::default(),
         }
@@ -141,12 +267,11 @@ impl Input {
 
     fn handle_focus(&mut self, cx: &mut ViewContext<Self>) {
         cx.emit(InputEvent::Focus);
-        self.buffer.update(cx, |buffer, cx| {});
+        // self.buffer.update(cx, |buffer, cx| {});
     }
 
     pub fn handle_blur(&mut self, cx: &mut ViewContext<Self>) {
         cx.emit(InputEvent::Blur);
-
         cx.notify();
     }
 
@@ -225,6 +350,8 @@ impl Render for Input {
             self.is_focused(cx)
         );
 
+        println!("Cursor visible: {:?}", self.cursor_visible);
+
         // println!("Input focus handle: {:?}", self.focus_handle);
         // println!("Current focus handler: {:?}", cx.focused());
 
@@ -271,11 +398,25 @@ impl Render for Input {
                     .group_hover("input", |this| this.border_color(hsla(0.0, 0.0, 0.31, 1.0)))
                     .child(
                         div()
+                            .relative()
                             .pl(px(style.padding.left))
                             .pr(px(style.padding.right))
                             .pt(px(style.padding.top))
                             .pb(px(style.padding.bottom))
                             .child(value),
+                    )
+                    .child(
+                        // Cursor - this won't actually be implemented this way.
+                        // This just let's us show off the cursor and blinking
+                        div()
+                            .absolute()
+                            .bg(hsla(0.0, 0.0, 0.0, 0.0))
+                            .when(self.is_focused(cx), |then| {
+                                then.bg(hsla(0.0, 0.0, 0.0, 1.0))
+                            })
+                            .w_px()
+                            .h(px(calculated_height - 6.0))
+                            .left(px(style.padding.left)),
                     ),
             )
     }
