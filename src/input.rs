@@ -98,9 +98,6 @@ impl Default for InputStyle {
 pub struct Input {
     id: ElementId,
     focus_handle: FocusHandle,
-    // There is a better way to do this,
-    // but I don't know how it works yet.
-    previous_focus: Option<FocusHandle>,
     buffer: Model<Buffer>,
 
     placeholder: Option<SharedString>,
@@ -114,7 +111,6 @@ impl Input {
         value: impl Into<SharedString>,
     ) -> Self {
         let focus_handle = cx.focus_handle();
-        let previous_focus = cx.focused();
         cx.on_focus(&focus_handle, Self::handle_focus).detach();
         cx.on_blur(&focus_handle, Self::handle_blur).detach();
 
@@ -123,7 +119,6 @@ impl Input {
         Self {
             id: id.into(),
             focus_handle,
-            previous_focus,
             buffer,
             placeholder: None,
             style: InputStyle::default(),
@@ -145,18 +140,12 @@ impl Input {
     }
 
     fn handle_focus(&mut self, cx: &mut ViewContext<Self>) {
-        self.previous_focus == cx.focused();
-
         cx.emit(InputEvent::Focus);
         self.buffer.update(cx, |buffer, cx| {});
     }
 
     pub fn handle_blur(&mut self, cx: &mut ViewContext<Self>) {
         cx.emit(InputEvent::Blur);
-
-        if let Some(previous_focus) = self.previous_focus.clone() {
-            cx.focus(&previous_focus)
-        };
 
         cx.notify();
     }
