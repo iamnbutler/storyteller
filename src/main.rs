@@ -1,20 +1,10 @@
 #![allow(unused)]
 
-use dialoguer::Select;
 use gpui::*;
-use schemars::{schema_for, JsonSchema};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::{Read, Write},
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::collections::HashMap;
 use uuid::Uuid;
-use valico::json_schema;
 
+mod cursor;
 mod input;
 mod ui;
 

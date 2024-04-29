@@ -55,7 +55,7 @@ impl Render for GameWindow {
             .bg(hsla(1.0, 1.0, 1.0, 1.0))
             .text_xl()
             .text_color(hsla(0.0, 0.0, 0.0, 1.0))
-            .on_click(cx.listener(|this, _event, cx| cx.focus_self()))
+            .on_click(cx.listener(|_, _event, cx| cx.focus_self()))
             .child(format!("Hello, {}!", player.name))
             .child(self.test_input.clone())
     }
