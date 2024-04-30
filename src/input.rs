@@ -1,3 +1,51 @@
+// maybe use a canvas to paint the output of a text run
+// try rendering cursor in the same canvas?
+// some sort of global init or keymap so we don't redefine the same keybindings in multiple places
+// example past input PR: https://github.com/zed-industries/zed/pull/9386
+// Look at terminal: TerminalInputHandler, will handle most of the input stuff`
+// consider adding rows but only use 1
+
+// struct TabFocusTargets {
+//     tabs: Vec<Box<dyn gpui::FocusableView>>,
+// }
+
+// fn transparent(cx: &mut AppContext) -> Hsla {
+//     let t = TabFocusTargets { tabs: vec![] };
+//     cx.set_global(t);
+
+//     cx.global::<TabFocusTargets>(); // Non mutable, crashes on not present
+//     cx.default_global::<TabFocusTargets>(); //Mutable, defaults on not present
+
+//     // Something something
+//     //
+//     //
+
+//     cx.update_global(|t: &mut TabFocusTargets, cx| {
+//         // Do your thing
+//     });
+
+//     hsla(0.0, 0.0, 0.0, 0.0)
+// }
+
+/*
+Fundamental problem:
+A bunch of things could happening, we need to dispatch to the right one.
+
+Solution in GPUI:
+use an action, so GPUI will do the resolution for you
+
+Problem: Actions are a global resource, and there's no contained way of saying
+'when you're here, make these actions available'.
+
+Problem: How do you disable them again?
+
+
+If we want to ignore all this action stuff.
+-> Solution, listen to keypresses, and do the things manually.
+
+question of API design and effort
+ */
+
 use gpui::{prelude::*, *};
 
 use crate::cursor::Cursor;
@@ -216,6 +264,7 @@ impl Input {
         id: impl Into<ElementId>,
         value: impl Into<String>,
     ) -> Self {
+        // Every call, adds these to the global list
         cx.bind_keys([KeyBinding::new("left", MoveLeft, Some("input"))]);
         cx.bind_keys([KeyBinding::new("right", MoveRight, Some("input"))]);
 
