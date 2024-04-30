@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gpui::*;
 
 use crate::{input::Input, Game};
@@ -9,7 +11,6 @@ pub enum GameWindowEvent {
 
 impl EventEmitter<GameWindowEvent> for GameWindow {}
 
-#[derive(Debug)]
 pub struct GameWindow {
     focus_handle: FocusHandle,
 
@@ -20,6 +21,7 @@ pub struct GameWindow {
 impl GameWindow {
     pub fn new(cx: &mut ViewContext<Self>, game: Game) -> Self {
         let focus_handle = cx.focus_handle();
+
         let test_input =
             cx.new_view(|cx| Input::new(cx, "test-input", "").set_placeholder("Type something..."));
 
